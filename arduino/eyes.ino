@@ -1,67 +1,83 @@
+#include "SPI.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_GC9A01A.h"
 #include <ros.h>   
 #include <std_msgs/String.h> 
 #include <ros/time.h>
-#include "SPI.h" 
-#include "Adafruit_GFX.h" 
-#include "Adafruit_GC9A01A.h" 
-#include "Fonts/FreeMono12pt7b.h" 
 
-//Definitions for OLEDS
-#define SCREEN_WIDTH 240 
-#define SCREEN_HEIGHT 240 
-#define OLED1_DC 7 
-#define OLED1_CS 10 
-#define OLED2_DC 6 
-#define OLED2_CS 36 
-#define OLED_BL 9 
-// #define OLED_RST PINNR 
+// Define pins for display interface
+#define OLED1_DC  7
+#define OLED1_CS 10
+#define OLED2_DC  6
+#define OLED2_CS 36
+//#define OLED_RST 8
+//#define OLED_BL 9
 
-// Display constructor for SPI connections 
-Adafruit_GC9A01A tft1 = Adafruit_GC9A01A(OLED1_CS, OLED1_DC); 
-Adafruit_GC9A01A tft2 = Adafruit_GC9A01A(OLED2_CS, OLED2_DC); 
+#define BLUE 0x9cfb
+#define GREEN 0x0665
+#define YELLOW 0xdfa0
+#define basecolor 0x0665
 
-ros::NodeHandle nh; 
-char color[6];  //il valore che ricevo da ros per il colore occhi 
+// Display constructors
+Adafruit_GC9A01A OLED1 = Adafruit_GC9A01A(OLED1_CS, OLED1_DC);
+Adafruit_GC9A01A OLED2 = Adafruit_GC9A01A(OLED2_CS, OLED2_DC);
 
-void colorMessageCb(const std_msgs::string &togglecolor) 
+ros::NodeHandle nh;
+
+//uint16_t color = 0;  //Color for eyes
+String color = 0x0665;
+
+
+void colorMessageCb(const std_msgs::String &teensy_eyes) 
 { 
-input = togglecolor.data; 
-//Example 0x9cfb
+color = teensy_eyes.data;
+uint16_t colorVal = atoi (color.substring(1, 3).c_str());
 
-}   
+//String data = "#255101987";
+//uint8_t first  = atoi (data.substring(1, 3).c_str ());   
 
-ros::Subscriber<std_msgs::Int32> sub("toggle_color", &colorMessageCb );   
 
-void setup()   
-{ 
-  // Backlight ON 
-  #if defined(OLED_BL) 
-    pinMode(OLEd_BL, OUTPUT); 
-    digitalWrite(OLED_BL, HIGH); // Backlight on 
-  #endif  
 
- 
-
-String text1 = "OLED 1"; 
-
-String text2 = "OLED 2"; 
-
- 
-
-Serial.begin(9600); 
-
-Serial.println("Started"); 
-  
-  // TODO: gli oled prendono il colore di default
-  leds.init();  
-  leds.setColorRGB(0, 0, 0, 0); 
-  leds.setColorRGB(1, 0, 0, 0);  
-  nh.initNode();   
-  nh.subscribe(sub);   
-}   
-
-void loop()   
-{ 
-// publisher would be herewe are not publishing anythingcurrentMillis = millis(); 
-  nh.spinOnce();   
+if(color=="blue"){  
+    OLED1.fillScreen(0x9cfb);
+    OLED2.fillScreen(0x9cfb); 
 } 
+  else if(color=="yellow"){ 
+    OLED1.fillScreen(YELLOW);
+    OLED2.fillScreen(YELLOW);  
+  } 
+  else if(color=="green"){ 
+    OLED1.fillScreen(GREEN);
+    OLED2.fillScreen(GREEN);   
+  } 
+  else { 
+    OLED1.fillScreen(0xf800);
+    OLED2.fillScreen(0xf800);   
+  } 
+
+
+}   
+
+ros::Subscriber<std_msgs::String> sub("teensy_eyes", &colorMessageCb ); 
+
+
+
+void setup() {
+  // put your setup code here, to run once:
+
+  OLED1.begin();
+  OLED2.begin();
+
+  OLED1.fillScreen(basecolor);
+  OLED2.fillScreen(basecolor);
+
+  nh.initNode();
+  nh.subscribe(sub); 
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  nh.spinOnce();
+
+}
+
